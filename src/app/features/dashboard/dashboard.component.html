@@ -1,0 +1,243 @@
+<div class="dashboard">
+  <header class="dashboard__header">
+    <div class="dashboard__header-content">
+      <h1 class="dashboard__title">Panel de Control</h1>
+      <p class="dashboard__subtitle">Bienvenido de nuevo, {{ userFullName() }}</p>
+    </div>
+    <div class="dashboard__header-actions">
+      <button 
+        class="btn btn--secondary" 
+        (click)="refreshData()"
+        [disabled]="isLoading()">
+        <span class="btn__icon">↻</span>
+        Actualizar
+      </button>
+    </div>
+  </header>
+
+  <app-loader *ngIf="isLoading()"></app-loader>
+
+  <app-error-message 
+    *ngIf="hasError() && !isLoading()"
+    [message]="error()!"
+    (retry)="retryLoad()">
+  </app-error-message>
+
+  <div class="dashboard__content" *ngIf="!isLoading() && !hasError()">
+    <section class="dashboard__overview">
+      <div class="card card--user">
+        <div class="card__header">
+          <h2 class="card__title">Información del Usuario</h2>
+        </div>
+        <div class="card__body">
+          <div class="user-info" *ngIf="hasUser()">
+            <div class="user-info__avatar">
+              <span class="user-info__initials">{{ userInitials() }}</span>
+            </div>
+            <div class="user-info__details">
+              <h3 class="user-info__name">{{ userFullName() }}</h3>
+              <p class="user-info__email">{{ user()?.email }}</p>
+              <p class="user-info__id">ID: {{ user()?.id }}</p>
+            </div>
+          </div>
+          <div class="user-info__empty" *ngIf="!hasUser()">
+            <p>No hay información del usuario disponible</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card--balance">
+        <div class="card__header">
+          <h2 class="card__title">Balance Total</h2>
+        </div>
+        <div class="card__body">
+          <div class="balance-display">
+            <span class="balance-display__amount">{{ formatCurrency(totalBalance()) }}</span>
+            <span class="balance-display__label">Balance actual</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card--stats">
+        <div class="card__header">
+          <h2 class="card__title">Estadísticas</h2>
+        </div>
+        <div class="card__body">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-item__value">{{ transactionCount() }}</span>
+              <span class="stat-item__label">Transacciones</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-item__value">{{ pendingCount() }}</span>
+              <span class="stat-item__label">Pendientes</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-item__value">{{ transactionsByType().credit }}</span>
+              <span class="stat-item__label">Ingresos</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-item__value">{{ transactionsByType().debit }}</span>
+              <span class="stat-item__label">Gastos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard__profile">
+      <div class="card card--profile">
+        <div class="card__header card__header--actions">
+          <h2 class="card__title">Perfil del Cliente</h2>
+          <button class="btn btn--primary btn--small" (click)="onProfileEdit()">
+            Editar Perfil
+          </button>
+        </div>
+        <div class="card__body">
+          <div class="profile-content" *ngIf="hasProfile(); else noProfile">
+            <div class="profile-completion">
+              <div class="profile-completion__header">
+                <span class="profile-completion__label">Perfil completado</span>
+                <span class="profile-completion__value">{{ profileCompletion() }}%</span>
+              </div>
+              <div class="profile-completion__bar">
+                <div 
+                  class="profile-completion__progress" 
+                  [style.width.%]="profileCompletion()">
+                </div>
+              </div>
+            </div>
+
+            <div class="profile-details">
+              <div class="profile-field" *ngIf="profile()?.email">
+                <span class="profile-field__label">Email</span>
+                <span class="profile-field__value">{{ profile()?.email }}</span>
+              </div>
+              <div class="profile-field" *ngIf="profile()?.phone">
+                <span class="profile-field__label">Teléfono</span>
+                <span class="profile-field__value">{{ profile()?.phone }}</span>
+              </div>
+              <div class="profile-field" *ngIf="profile()?.address">
+                <span class="profile-field__label">Dirección</span>
+                <span class="profile-field__value">{{ profile()?.address }}</span>
+              </div>
+              <div class="profile-field" *ngIf="profile()?.city">
+                <span class="profile-field__label">Ciudad</span>
+                <span class="profile-field__value">{{ profile()?.city }}</span>
+              </div>
+              <div class="profile-field" *ngIf="profile()?.postalCode">
+                <span class="profile-field__label">Código Postal</span>
+                <span class="profile-field__value">{{ profile()?.postalCode }}</span>
+              </div>
+              <div class="profile-field" *ngIf="profile()?.country">
+                <span class="profile-field__label">País</span>
+                <span class="profile-field__value">{{ profile()?.country }}</span>
+              </div>
+            </div>
+
+            <div class="profile-preferences" *ngIf="profile()?.preferences">
+              <h4 class="profile-preferences__title">Preferencias</h4>
+              <div class="preference-tags">
+                <span 
+                  class="preference-tag" 
+                  *ngFor="let pref of profile()?.preferences">
+                  {{ pref }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <ng-template #noProfile>
+            <div class="profile-empty">
+              <p>No hay información del perfil disponible</p>
+              <button class="btn btn--primary" (click)="onProfileEdit()">
+                Completar Perfil
+              </button>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard__transactions">
+      <div class="card card--transactions">
+        <div class="card__header card__header--actions">
+          <h2 class="card__title">Transacciones Recientes</h2>
+          <button class="btn btn--secondary btn--small" (click)="onViewAllTransactions()">
+            Ver Todas
+          </button>
+        </div>
+        <div class="card__body">
+          <div class="transactions-list" *ngIf="hasTransactions(); else noTransactions">
+            <div 
+              class="transaction-item" 
+              *ngFor="let transaction of recentTransactions()"
+              (click)="onTransactionClick(transaction)">
+              <div class="transaction-item__icon" [ngClass]="getTransactionStatusClass(transaction.status)">
+                <span class="transaction-item__icon-text">{{ getTransactionTypeLabel(transaction.type).charAt(0) }}</span>
+              </div>
+              <div class="transaction-item__details">
+                <span class="transaction-item__description">{{ transaction.description }}</span>
+                <span class="transaction-item__date">{{ formatDate(transaction.date) }}</span>
+              </div>
+              <div class="transaction-item__amount" [ngClass]="transaction.type">
+                <span class="transaction-item__amount-value">
+                  {{ transaction.type === 'debit' ? '-' : '+' }}{{ formatCurrency(transaction.amount) }}
+                </span>
+                <span class="transaction-item__status" [ngClass]="getTransactionStatusClass(transaction.status)">
+                  {{ transaction.status }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <ng-template #noTransactions>
+            <div class="transactions-empty">
+              <p>No hay transacciones recientes</p>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard__activity">
+      <div class="card card--activity">
+        <div class="card__header">
+          <h2 class="card__title">Actividad Reciente</h2>
+        </div>
+        <div class="card__body">
+          <div class="activity-timeline" *ngIf="lastTransactionDate()">
+            <div class="activity-item">
+              <div class="activity-item__marker"></div>
+              <div class="activity-item__content">
+                <span class="activity-item__title">Última transacción</span>
+                <span class="activity-item__date">{{ formatDate(lastTransactionDate()!) }}</span>
+              </div>
+            </div>
+            <div class="activity-item" *ngIf="hasProfile()">
+              <div class="activity-item__marker"></div>
+              <div class="activity-item__content">
+                <span class="activity-item__title">Perfil actualizado</span>
+                <span class="activity-item__date">{{ formatDate(profile()?.lastUpdated || '') }}</span>
+              </div>
+            </div>
+            <div class="activity-item" *ngIf="hasUser()">
+              <div class="activity-item__marker"></div>
+              <div class="activity-item__content">
+                <span class="activity-item__title">Último inicio de sesión</span>
+                <span class="activity-item__date">{{ formatDate(user()?.lastLogin || '') }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="activity-empty" *ngIf="!lastTransactionDate()">
+            <p>No hay actividad reciente</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="dashboard__footer" *ngIf="!isLoading()">
+    <p class="dashboard__footer-text">
+      Portal de Autogestión - {{ currentYear() }}
+    </p>
+  </footer>
+</div>
